@@ -1,0 +1,21 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 64px); /* Adjust for AppBar height */
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.textarea {
+  width: 100%;
+  max-width: 800px; /* Increase the maximum width */
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  resize: none; /* Prevent resizing */
+  background-color: #f9f9f9; /* Optional: Light background */
+}
