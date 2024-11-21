@@ -72,6 +72,7 @@ export class TokenController {
     @Query('limit') limit: string,
     @Query('search') search: string,
     @Query('sortOrder') sortOrder: string,
+    @Query('filePath') filePath: string,
     @Res() res: Response,
   ) {
     try {

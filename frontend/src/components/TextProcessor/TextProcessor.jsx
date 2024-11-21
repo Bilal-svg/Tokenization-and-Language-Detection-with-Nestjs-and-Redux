@@ -1,73 +1,49 @@
-import { Box, Button, TextField, Typography } from "@mui/material";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  selectCount,
-  selectError,
-  selectIsDownloading,
-  selectIsProcessing,
-  selectPdfFileName,
-  selectText,
-  setCount,
-  setError,
-  setIsDownloading,
-  setIsProcessing,
-  setPdfFileName,
-  setText,
-} from "../../redux/slice/textSlice";
-import {
-  getSelectedCount,
-  getSelectedText,
-} from "../../redux/slice/drawerSlice";
+import { Box, Button, TextField, Typography } from "@mui/material";
 
-const TextProcessor = () => {
-  const dispatch = useDispatch();
-
-  const text = useSelector(selectText);
-  const isProcessing = useSelector(selectIsProcessing);
-  const isDownloading = useSelector(selectIsDownloading);
-  const pdfFileName = useSelector(selectPdfFileName);
-  const count = useSelector(selectCount);
-  const error = useSelector(selectError);
-
-  const selectedText = useSelector(getSelectedText);
-  const selectedCount = useSelector(getSelectedCount);
+const TextProcessor = ({ selectedText, selectedCount }) => {
+  console.log("🚀 ~ TextProcessor ~ selectedText:", selectedText);
+  const [text, setText] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [pdfFileName, setPdfFileName] = useState("");
+  const [count, setCount] = useState(null);
+  const [error, setError] = useState(null);
 
   // Update textarea whenever a new text is selected from the sidebar
   useEffect(() => {
     if (selectedText) {
-      dispatch(setText(selectedText));
-      dispatch(setCount(selectedCount));
+      setText(selectedText);
+      setCount(selectedCount);
     }
-  }, [selectedText, selectedCount, dispatch]);
+  }, [selectedText, selectedCount]);
 
   const handleProcessText = async () => {
-    dispatch(setIsProcessing(true));
-    dispatch(setError(null));
+    setIsProcessing(true);
+    setError(null); // Clear previous errors
     try {
       const response = await axios.post("http://localhost:3000/token/process", {
         text,
       });
       const { filePath, count } = response.data;
-      dispatch(setPdfFileName(filePath.split("\\").pop()));
-      // setCount(count);
-      dispatch(setCount(count));
+      setPdfFileName(filePath.split("\\").pop());
+      setCount(count);
     } catch (err) {
-      dispatch(setError("Error processing text. Please try again."));
+      setError("Error processing text. Please try again.");
     } finally {
-      dispatch(setIsProcessing(false));
+      setIsProcessing(false);
     }
   };
 
   const handleDownloadPDF = async () => {
     if (!pdfFileName) {
-      dispatch(setError("No file to download"));
+      setError("No file to download");
       return;
     }
 
-    dispatch(setIsDownloading(true));
-    dispatch(setError(null));
+    setIsDownloading(true);
+    setError(null); // Clear previous errors
     try {
       const response = await axios.get(
         `http://localhost:3000/token/download/${pdfFileName}`,
@@ -77,13 +53,13 @@ const TextProcessor = () => {
       );
 
       if (!response.data || response.data.size === 0) {
-        dispatch(setError("File download failed: Received empty response"));
+        setError("File download failed: Received empty response");
         return;
       }
 
       const contentType = response.headers["content-type"];
       if (contentType !== "application/pdf") {
-        dispatch(setError("Error: File is not a valid PDF"));
+        setError("Error: File is not a valid PDF");
         return;
       }
 
@@ -96,9 +72,9 @@ const TextProcessor = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      dispatch(setError("Error downloading the file."));
+      setError("Error downloading the file.");
     } finally {
-      dispatch(setIsDownloading(false));
+      setIsDownloading(false);
     }
   };
 
@@ -125,7 +101,7 @@ const TextProcessor = () => {
         variant="outlined"
         placeholder="Enter text to process..."
         value={text}
-        onChange={(e) => dispatch(setText(e.target.value))}
+        onChange={(e) => setText(e.target.value)}
         sx={{
           marginBottom: 2,
           backgroundColor: "#f9f9f9",

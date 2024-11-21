@@ -25,11 +25,12 @@ export class TokenService {
 
     // Generate the PDF and get the word/character count
     const { fileName, filePath, count } = await generatePDF(text);
+    console.log('🚀 ~ TokenService ~ processText ~ filePath:', filePath);
 
     // Save the text and count to the database
     const savedText = await this.textModel.findOneAndUpdate(
       { text },
-      { text, count },
+      { text, count, filePath },
       { new: true, upsert: true },
     );
 

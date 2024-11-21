@@ -8,6 +8,9 @@ export class Text extends Document {
 
   @Prop({ required: true, default: 0 })
   count: number;
+
+  @Prop({ required: true, default: '' })
+  filePath: string;
 }
 
 export const TextSchema = SchemaFactory.createForClass(Text);
