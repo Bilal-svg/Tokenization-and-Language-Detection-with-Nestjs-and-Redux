@@ -1,22 +1,14 @@
-import React, { useState } from "react";
+import React from "react";
 import PersistentDrawer from "./components/Drawer/persistentDrawer";
 import TextProcessor from "./components/TextProcessor/TextProcessor";
 
 const App = () => {
-  const [selectedText, setSelectedText] = useState("");
-  const [selectedCount, setSelectedCount] = useState(0);
-
-  const handleTextSelect = (text, count) => {
-    setSelectedText(text);
-    setSelectedCount(count);
-  };
+  // const [selectedText, setSelectedText] = useState("");
+  // const [selectedCount, setSelectedCount] = useState(0);
 
   return (
-    <PersistentDrawer onTextSelect={handleTextSelect}>
-      <TextProcessor
-        selectedText={selectedText}
-        selectedCount={selectedCount}
-      />
+    <PersistentDrawer>
+      <TextProcessor />
     </PersistentDrawer>
   );
 };

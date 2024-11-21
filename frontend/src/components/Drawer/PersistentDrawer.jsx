@@ -1,27 +1,30 @@
-import React, { useState, useEffect } from "react";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import MenuIcon from "@mui/icons-material/Menu";
 import {
   AppBar,
-  Toolbar,
-  Typography,
-  CssBaseline,
-  Drawer,
-  IconButton,
   Box,
+  Chip,
+  CssBaseline,
   Divider,
+  Drawer,
+  FormControl,
+  IconButton,
+  InputLabel,
   List,
   ListItemButton,
   ListItemText,
-  TextField,
-  Select,
   MenuItem,
-  FormControl,
-  InputLabel,
-  Chip,
   Pagination,
+  Select,
+  TextField,
+  Toolbar,
+  Typography,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import axios from "axios";
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { onSelect } from "../../redux/slice/drawerSlice";
+import { setPdfFileName } from "../../redux/slice/textSlice";
 
 const drawerWidth = 240;
 
@@ -35,13 +38,14 @@ const formatDate = (isoDate) => {
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 };
 
-const PersistentDrawer = ({ children, onTextSelect }) => {
+const PersistentDrawer = ({ children }) => {
   const [open, setOpen] = useState(false);
   const [texts, setTexts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const dispatch = useDispatch();
   const itemsPerPage = 10;
 
   const handleDrawerToggle = () => {
@@ -49,7 +53,15 @@ const PersistentDrawer = ({ children, onTextSelect }) => {
   };
 
   const handleTextSelection = (textObject) => {
-    onTextSelect(textObject.text, textObject.count);
+    dispatch(
+      onSelect({
+        text: textObject.text,
+        count: textObject.count,
+      })
+    );
+    console.log(textObject);
+    console.log(textObject.filePath, "filePATHHHHHH");
+    dispatch(setPdfFileName(textObject.filePath?.split("\\").pop()));
   };
 
   const handleSearchChange = (event) => {
