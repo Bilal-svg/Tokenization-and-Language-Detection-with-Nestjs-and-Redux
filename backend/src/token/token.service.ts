@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UseGuards } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, SortOrder } from 'mongoose';
 import { Text } from '../schemas/text.schema.js';
 import { tokenizeText } from './utils/tokenizer.util.js';
-import { validateText } from './utils/validation.util.js';
+
 import { generatePDF } from './utils/pdfGenerator.util.js';
+import { TextValidationGuard } from './gaurds/validation.gaurd.js';
 
 @Injectable()
 export class TokenService {
@@ -13,24 +14,25 @@ export class TokenService {
   ) {}
 
   async processText(text: string) {
-    // Validate the input text
-    const validation = validateText(text);
-    if (!validation.valid) {
-      throw new Error(validation.error);
-    }
+    // // Validate the input text
+    // const validation = this.validate.validateText(text);
+    // if (validation.valid == false) {
+    //   throw new Error(validation.error);
+    // }
 
     // Tokenize the text
     const token = tokenizeText(text);
-    const { tokens, wordCount, languages } = token;
+    const { tokens, count, languages } = token;
+    console.log('🚀 ~ TokenService ~ processText ~ count:', count);
 
     // Generate the PDF and get the word/character count
-    const { fileName, filePath, count } = await generatePDF(text);
+    const { fileName, filePath } = await generatePDF(text);
     console.log('🚀 ~ TokenService ~ processText ~ filePath:', filePath);
 
     // Save the text and count to the database
     const savedText = await this.textModel.findOneAndUpdate(
       { text },
-      { text, count, filePath },
+      { text, filePath, languages, count },
       { new: true, upsert: true },
     );
 

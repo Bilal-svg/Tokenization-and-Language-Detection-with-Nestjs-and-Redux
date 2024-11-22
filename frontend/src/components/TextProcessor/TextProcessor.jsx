@@ -1,49 +1,81 @@
-import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import axios from "axios";
-import { Box, Button, TextField, Typography } from "@mui/material";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  selectCount,
+  selectError,
+  selectIsDownloading,
+  selectIsProcessing,
+  selectPdfFileName,
+  selectText,
+  setCount,
+  setError,
+  setIsDownloading,
+  setIsProcessing,
+  setPdfFileName,
+  setText,
+} from "../../redux/slice/textSlice";
+import {
+  getSelectedCount,
+  getSelectedText,
+  triggerRefresh,
+} from "../../redux/slice/drawerSlice";
 
-const TextProcessor = ({ selectedText, selectedCount }) => {
-  console.log("🚀 ~ TextProcessor ~ selectedText:", selectedText);
-  const [text, setText] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [pdfFileName, setPdfFileName] = useState("");
-  const [count, setCount] = useState(null);
-  const [error, setError] = useState(null);
+const TextProcessor = ({ isDrawerOpen, drawerWidth }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const dispatch = useDispatch();
 
-  // Update textarea whenever a new text is selected from the sidebar
+  const text = useSelector(selectText);
+  const isProcessing = useSelector(selectIsProcessing);
+  const isDownloading = useSelector(selectIsDownloading);
+  const pdfFileName = useSelector(selectPdfFileName);
+  const count = useSelector(selectCount);
+  const error = useSelector(selectError);
+  const selectedText = useSelector(getSelectedText);
+  const selectedCount = useSelector(getSelectedCount);
+
   useEffect(() => {
     if (selectedText) {
-      setText(selectedText);
-      setCount(selectedCount);
+      dispatch(setText(selectedText));
+      dispatch(setCount(selectedCount));
     }
   }, [selectedText, selectedCount]);
 
   const handleProcessText = async () => {
-    setIsProcessing(true);
-    setError(null); // Clear previous errors
+    dispatch(setIsProcessing(true));
+    dispatch(setError(null));
     try {
       const response = await axios.post("http://localhost:3000/token/process", {
         text,
       });
       const { filePath, count } = response.data;
-      setPdfFileName(filePath.split("\\").pop());
-      setCount(count);
+      dispatch(setPdfFileName(filePath.split("\\").pop()));
+      dispatch(setCount(count));
+      dispatch(triggerRefresh());
     } catch (err) {
-      setError("Error processing text. Please try again.");
+      dispatch(setError("Error processing text. Please try again."));
     } finally {
-      setIsProcessing(false);
+      dispatch(setIsProcessing(false));
     }
   };
 
   const handleDownloadPDF = async () => {
     if (!pdfFileName) {
-      setError("No file to download");
+      dispatch(setError("No file to download"));
       return;
     }
 
-    setIsDownloading(true);
-    setError(null); // Clear previous errors
+    dispatch(setIsDownloading(true));
+    dispatch(setError(null));
     try {
       const response = await axios.get(
         `http://localhost:3000/token/download/${pdfFileName}`,
@@ -53,13 +85,7 @@ const TextProcessor = ({ selectedText, selectedCount }) => {
       );
 
       if (!response.data || response.data.size === 0) {
-        setError("File download failed: Received empty response");
-        return;
-      }
-
-      const contentType = response.headers["content-type"];
-      if (contentType !== "application/pdf") {
-        setError("Error: File is not a valid PDF");
+        dispatch(setError("File download failed: Received empty response"));
         return;
       }
 
@@ -72,36 +98,43 @@ const TextProcessor = ({ selectedText, selectedCount }) => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      setError("Error downloading the file.");
+      dispatch(setError("Error downloading the file."));
     } finally {
-      setIsDownloading(false);
+      dispatch(setIsDownloading(false));
     }
   };
 
   return (
     <Box
       sx={{
-        width: "100%",
-        maxWidth: 800, // Max width for the component
-        textAlign: "center", // Center text alignment
-        padding: 2,
+        width: isMobile ? "90%" : "50%", // Smaller width on mobile
+        maxWidth: "600px", // Limit the maximum size
+        textAlign: "center",
+        padding: 3,
         borderRadius: 2,
         boxShadow: 3,
         backgroundColor: "#fff",
+        position: "absolute", // Absolute positioning to center the box
+        top: "50%", // Center vertically
+        left: isDrawerOpen && isMobile ? `${drawerWidth}px` : "50%", // Adjust position if drawer is open
+        transform:
+          isDrawerOpen && isMobile
+            ? "translate(0, -50%)"
+            : "translate(-50%, -50%)", // Translate accordingly
       }}
     >
-      <Typography variant="h4" gutterBottom>
+      <Typography variant={isMobile ? "h6" : "h5"} gutterBottom>
         Text Processor
       </Typography>
 
       <TextField
         multiline
-        rows={8}
+        rows={isMobile ? 4 : 6} // Fewer rows on mobile
         fullWidth
         variant="outlined"
         placeholder="Enter text to process..."
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => dispatch(setText(e.target.value))}
         sx={{
           marginBottom: 2,
           backgroundColor: "#f9f9f9",
@@ -110,18 +143,28 @@ const TextProcessor = ({ selectedText, selectedCount }) => {
       />
 
       {error && (
-        <Typography color="error" sx={{ marginBottom: 2 }}>
+        <Typography
+          color="error"
+          sx={{ marginBottom: 2, fontSize: { xs: "0.8rem", sm: "1rem" } }}
+        >
           {error}
         </Typography>
       )}
 
-      <Box sx={{ marginBottom: 2 }}>
+      <Box
+        sx={{
+          marginBottom: 2,
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row", // Stack buttons on mobile
+          gap: 2,
+        }}
+      >
         <Button
           variant="contained"
           color="primary"
           onClick={handleProcessText}
           disabled={isProcessing}
-          sx={{ marginRight: 2 }}
+          fullWidth={isMobile}
         >
           {isProcessing ? "Processing..." : "Process Text"}
         </Button>
@@ -130,13 +173,17 @@ const TextProcessor = ({ selectedText, selectedCount }) => {
           color="secondary"
           onClick={handleDownloadPDF}
           disabled={!pdfFileName || isDownloading}
+          fullWidth={isMobile}
         >
           {isDownloading ? "Downloading..." : "Download PDF"}
         </Button>
       </Box>
 
       {count !== null && (
-        <Typography variant="body1">
+        <Typography
+          variant="body1"
+          sx={{ fontSize: { xs: "0.8rem", sm: "1rem" } }}
+        >
           <strong>Word Count:</strong> {count}
         </Typography>
       )}

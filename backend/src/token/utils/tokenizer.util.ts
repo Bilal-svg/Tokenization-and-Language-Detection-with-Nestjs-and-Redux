@@ -1,4 +1,4 @@
-import { francAll } from 'franc';
+import { francAll, franc } from 'franc';
 import WinkTokenizer from 'wink-tokenizer';
 
 const tokenizer = new WinkTokenizer();
@@ -8,15 +8,15 @@ const tokenizer = new WinkTokenizer();
  * @param {string} text - The input text to analyze.
  * @returns {{
  *   tokens: string[];
- *   wordCount: number;
+ *   count: number;
  *   languages: { language: string; probability: number }[];
  * }}
  * - Tokenized words, word count, and detected languages with probabilities.
  */
 export function tokenizeText(text: string): {
   tokens: string[];
-  wordCount: number;
-  languages: { language: string; probability: number }[];
+  count: number;
+  languages: string;
 } {
   console.log('🚀 ~ tokenizeText ~ text:', text);
 
@@ -25,24 +25,29 @@ export function tokenizeText(text: string): {
   }
 
   // Detect multiple languages in the text
-  const detectedLanguages = francAll(text).slice(0, 10); // Get the top 10 most probable languages
+  const detectedLanguages = franc(text); // Get the top 10 most probable languages
   console.log('🚀 ~ tokenizeText ~ Detected Languages:', detectedLanguages);
 
-  const languages = detectedLanguages.map(([language, probability]) => ({
-    language,
-    probability,
-  }));
+  // const languages = detectedLanguages.map(([language, probability]) => ({
+  //   language,
+  //   probability,
+  // }));
+  const languages = detectedLanguages;
 
   // Tokenize the text
   try {
     const tokens = tokenizer
       .tokenize(text)
-      .filter((token) => token.tag === 'word')
+      .filter((token) => {
+        // Handle hyphenated words (e.g., "well-known")
+        // Handle contractions with apostrophes (e.g., "it's", "they're")
+        return token.tag === 'word' && /^[a-zA-Z0-9'-]+$/u.test(token.value);
+      })
       .map((token) => token.value);
 
     return {
       tokens,
-      wordCount: tokens.length,
+      count: tokens.length,
       languages,
     };
   } catch (error) {

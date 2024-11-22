@@ -9,25 +9,28 @@ import {
   Get,
   Param,
   Header,
+  UseGuards,
 } from '@nestjs/common';
 import { TokenService } from './token.service.js';
 import { Response } from 'express';
 import path from 'path';
 import * as fs from 'fs';
+import { TextValidationGuard } from './gaurds/validation.gaurd.js';
 
 @Controller('token')
 export class TokenController {
   constructor(private readonly tokenService: TokenService) {}
 
   @Post('process')
+  @UseGuards(TextValidationGuard)
   async processText(@Body() body: { text: string }, @Res() res: Response) {
     try {
       const { text } = body;
-      const { filePath, count, tokens, languages } =
+      const { filePath, count, tokens, languages, savedText } =
         await this.tokenService.processText(text);
       return res
         .status(HttpStatus.OK)
-        .json({ filePath, count, tokens, languages });
+        .json({ filePath, count, tokens, languages, savedText });
     } catch (error) {
       throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
     }

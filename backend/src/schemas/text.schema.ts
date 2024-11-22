@@ -11,6 +11,9 @@ export class Text extends Document {
 
   @Prop({ required: true, default: '' })
   filePath: string;
+
+  @Prop({ required: true, default: '' })
+  languages: string;
 }
 
 export const TextSchema = SchemaFactory.createForClass(Text);
