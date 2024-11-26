@@ -11,7 +11,7 @@ const tokenizer = new WinkTokenizer();
  *   count: number;
  *   languages: { language: string; probability: number }[];
  * }}
- * - Tokenized words, word count, and detected languages with probabilities.
+ 
  */
 export function tokenizeText(text: string): {
   tokens: string[];
@@ -39,8 +39,6 @@ export function tokenizeText(text: string): {
     const tokens = tokenizer
       .tokenize(text)
       .filter((token) => {
-        // Handle hyphenated words (e.g., "well-known")
-        // Handle contractions with apostrophes (e.g., "it's", "they're")
         return token.tag === 'word' && /^[a-zA-Z0-9'-]+$/u.test(token.value);
       })
       .map((token) => token.value);

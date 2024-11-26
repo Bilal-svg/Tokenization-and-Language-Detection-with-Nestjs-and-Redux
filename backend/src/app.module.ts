@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TokenModule } from './token/token.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { UsersModule } from './users/users.module.js';
 import mongoose from 'mongoose';
 
 mongoose.set('debug', true);
@@ -20,6 +22,8 @@ mongoose.set('debug', true);
         return connection;
       },
     }),
+    AuthModule,
+    UsersModule,
   ],
 })
 export class AppModule {}
