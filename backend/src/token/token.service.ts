@@ -74,4 +74,29 @@ export class TokenService {
     console.log('🚀 ~ TokenService ~ texts:', texts);
     return { texts, totalCount };
   }
+
+  async flagText(textId: string, flagStatus: boolean) {
+    const updatedText = await this.textModel.findByIdAndUpdate(
+      textId,
+      { flagged: flagStatus },
+      { new: true },
+    );
+
+    if (!updatedText) {
+      throw new Error('Text not found');
+    }
+
+    return updatedText;
+  }
+
+  // Method to delete a text
+  async deleteText(textId: string) {
+    const deletedText = await this.textModel.findByIdAndDelete(textId);
+
+    if (!deletedText) {
+      throw new Error('Text not found');
+    }
+
+    return deletedText;
+  }
 }

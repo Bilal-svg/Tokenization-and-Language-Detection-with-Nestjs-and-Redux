@@ -20,6 +20,9 @@ export class Text extends Document {
 
   @Prop({ required: true, default: '' })
   sub: string;
+
+  @Prop({ required: true, default: false })
+  flagged: boolean;
 }
 
 export const TextSchema = SchemaFactory.createForClass(Text);

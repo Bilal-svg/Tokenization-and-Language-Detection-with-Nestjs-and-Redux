@@ -15,6 +15,8 @@ import {
   IconButton,
 } from "@mui/material";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import FlagIcon from "@mui/icons-material/Flag"; // Flag icon for flagging text
+import DeleteIcon from "@mui/icons-material/Delete"; // Delete icon for deleting text
 
 const formatDate = (isoDate) => {
   const date = new Date(isoDate);
@@ -38,6 +40,8 @@ const DrawerList = ({
   currentPage,
   totalPages,
   onPageChange,
+  handleFlagText, // Function for flagging the text
+  handleDeleteText, // Function for deleting the text
 }) => {
   const handleSearchChange = (value) => {
     setSearchQuery(value);
@@ -47,6 +51,8 @@ const DrawerList = ({
     setSortOrder(value); // update the sort order
   };
 
+  const userRole = localStorage.getItem("role");
+  console.log("🚀 ~ userRole:", userRole);
   return (
     <Box
       sx={{
@@ -106,6 +112,14 @@ const DrawerList = ({
               flexDirection: "column",
               alignItems: "flex-start",
               overflowX: "hidden", // Prevent individual item overflow
+              backgroundColor: textObject.flagged ? "orange" : "transparent", // Highlight flagged texts
+              "&:hover": {
+                borderColor: "blue", // Blue border on hover for all items
+                backgroundColor: textObject.flagged ? "orange" : "#f1f1f1", // Keep flagged red on hover, others light grey
+                border: "4px solid lightblue",
+              },
+
+              transition: "all 0.3s ease", // Smooth transition for background and border
             }}
           >
             <ListItemText
@@ -149,6 +163,45 @@ const DrawerList = ({
                   padding: { xs: "0 2px", sm: "0 4px" },
                 }}
               />
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "flex-end",
+                width: "100%",
+                marginTop: 1,
+              }}
+            >
+              {userRole === "admin" && (
+                <>
+                  {/* Flag Icon */}
+                  <IconButton
+                    onClick={() => handleFlagText(textObject._id)}
+                    sx={{
+                      marginRight: 1,
+                      "&:hover": {
+                        backgroundColor: "purple",
+                      },
+                    }}
+                    color="primary"
+                  >
+                    <FlagIcon />
+                  </IconButton>
+                  {/* Delete Icon */}
+                  <IconButton
+                    onClick={() => handleDeleteText(textObject._id)}
+                    sx={{
+                      marginRight: 1,
+                      "&:hover": {
+                        backgroundColor: "purple",
+                      },
+                    }}
+                    color="error"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </>
+              )}
             </Box>
           </ListItemButton>
         ))}

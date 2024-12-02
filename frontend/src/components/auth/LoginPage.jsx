@@ -18,9 +18,11 @@ const LoginPage = () => {
       console.log("🚀 ~ handleLogin ~ response.data:", response.data);
 
       const token = response.data.token;
+      const role = response.data.role;
       if (token) {
         localStorage.setItem("token", token);
         console.log("Token set in localStorage:", token);
+        localStorage.setItem("role", role);
       } else {
         console.error("No token received from the server!");
       }

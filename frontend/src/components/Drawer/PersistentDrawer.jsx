@@ -41,6 +41,52 @@ const PersistentDrawer = ({ children }) => {
     setOpen(!open);
   };
 
+  const handleFlagText = async (textId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found, cannot flag text");
+        return;
+      }
+
+      // Update the text as flagged on the server
+      await axios.patch(
+        `http://localhost:3000/token/flag/${textId}`,
+        { flagged: true },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // Refresh texts
+      fetchTexts();
+    } catch (error) {
+      console.error("Error flagging text:", error);
+    }
+  };
+
+  const handleDeleteText = async (textId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found, cannot delete text");
+        return;
+      }
+
+      // Delete the text from the database
+      await axios.delete(`http://localhost:3000/token/delete/${textId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // Refresh texts
+      fetchTexts();
+    } catch (error) {
+      console.error("Error deleting text:", error);
+    }
+  };
+
   // Handle logout
   const handleLogout = () => {
     // Clear localStorage to reset the state
@@ -48,7 +94,7 @@ const PersistentDrawer = ({ children }) => {
     localStorage.removeItem("guest");
     dispatch(logout()); // Dispatch logout to clear state in Redux
 
-    // Reset the drawer state (optional but good for consistent app behavior)
+    // Reset the drawer state
     setTexts([]);
     setSearchQuery("");
     setSortOrder("newest");
@@ -71,40 +117,41 @@ const PersistentDrawer = ({ children }) => {
     setCurrentPage(page);
   };
 
-  useEffect(() => {
-    const fetchTexts = async () => {
-      try {
-        const token = localStorage.getItem("token"); // Retrieve the token
-        console.log("Token from localStorage:", token);
-
-        if (!token) {
-          console.error("No token found, user might be logged out");
-          return;
-        }
-
-        const response = await axios.get(
-          "http://localhost:3000/token/saved-texts",
-          {
-            params: {
-              page: currentPage,
-              limit: itemsPerPage,
-              search: searchQuery,
-              sortOrder,
-            },
-            headers: {
-              Authorization: `Bearer ${token}`, // Send the token in the Authorization header
-            },
-          }
-        );
-        setTexts(response.data.texts);
-        setTotalPages(Math.ceil(response.data.totalCount / itemsPerPage));
-        if (totalPages < currentPage) {
-          setCurrentPage(1);
-        }
-      } catch (error) {
-        console.error("Error fetching texts:", error);
+  const fetchTexts = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found, user might be logged out");
+        return;
       }
-    };
+
+      const response = await axios.get(
+        "http://localhost:3000/token/saved-texts",
+        {
+          params: {
+            page: currentPage,
+            limit: itemsPerPage,
+            search: searchQuery,
+            sortOrder,
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setTexts(response.data.texts);
+      setTotalPages(Math.ceil(response.data.totalCount / itemsPerPage));
+
+      if (totalPages < currentPage) {
+        setCurrentPage(1); // Reset to page 1 if totalPages is less than currentPage
+      }
+    } catch (error) {
+      console.error("Error fetching texts:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchTexts();
   }, [currentPage, searchQuery, sortOrder, refresh]);
 
@@ -188,6 +235,8 @@ const PersistentDrawer = ({ children }) => {
             currentPage={currentPage}
             sortOrder={sortOrder}
             setSortOrder={setSortOrder}
+            handleFlagText={handleFlagText}
+            handleDeleteText={handleDeleteText}
           />
         )}
       </Drawer>

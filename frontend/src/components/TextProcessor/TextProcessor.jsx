@@ -138,8 +138,11 @@ const TextProcessor = ({ isDrawerOpen, drawerWidth }) => {
       name,
     });
     const token = response.data.token;
+    const role = response.data.role;
     if (guestName.trim()) {
       localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+
       navigate("/app");
     } else {
       alert("Please enter your name to continue as a guest.");

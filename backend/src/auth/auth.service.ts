@@ -65,7 +65,7 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid)
       throw new UnauthorizedException('Invalid credentials');
-
+    const role = user.role;
     const payload = { email: user.email, sub: user.id, role: user.role };
     const token = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET_KEY,
@@ -74,7 +74,7 @@ export class AuthService {
 
     console.log(token);
 
-    return { token };
+    return { token, role };
   }
 
   // Guest login method
@@ -94,7 +94,8 @@ export class AuthService {
         expiresIn: '5d', // Set the expiration time for guest
       });
       console.log('🚀 ~ AuthService ~ guestLogin ~ token:', token);
-      return { token };
+      const role = userExists.role;
+      return { token, role };
     }
 
     const user = await this.usersService.createUser(name, email, '', 'guest');
@@ -104,7 +105,7 @@ export class AuthService {
       secret: process.env.JWT_SECRET_KEY,
       expiresIn: '5d',
     });
-
-    return { token };
+    const role = user.role;
+    return { token, role };
   }
 }

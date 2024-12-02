@@ -9,6 +9,8 @@ import {
   UseGuards,
   Header,
   Param,
+  Delete,
+  Patch,
 } from '@nestjs/common';
 import { TokenService } from './token.service.js';
 import { AuthGuard } from '../auth/auth.gaurd.js';
@@ -106,6 +108,40 @@ export class TokenController {
     } catch (error) {
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: error.message });
+    }
+  }
+
+  @Patch('flag/:textId')
+  @UseGuards(AuthGuard)
+  async flagText(
+    @Param('textId') textId: string,
+    @Body() body: { flagged: boolean },
+    @Res() res: Response,
+  ) {
+    try {
+      const updatedText = await this.tokenService.flagText(
+        textId,
+        body.flagged,
+      );
+      return res.status(HttpStatus.OK).json(updatedText);
+    } catch (error) {
+      return res
+        .status(HttpStatus.BAD_REQUEST)
+        .json({ message: error.message });
+    }
+  }
+
+  // New delete endpoint
+  @Delete('delete/:textId')
+  @UseGuards(AuthGuard)
+  async deleteText(@Param('textId') textId: string, @Res() res: Response) {
+    try {
+      const deletedText = await this.tokenService.deleteText(textId);
+      return res.status(HttpStatus.OK).json(deletedText);
+    } catch (error) {
+      return res
+        .status(HttpStatus.BAD_REQUEST)
         .json({ message: error.message });
     }
   }
