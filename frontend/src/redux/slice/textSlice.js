@@ -1,4 +1,7 @@
+// src/redux/slice/textSlice.js
+
 import { createSlice } from "@reduxjs/toolkit";
+
 const initialState = {
   text: "",
   isProcessing: false,
@@ -7,12 +10,10 @@ const initialState = {
   count: null,
   error: null,
 };
+
 const textSlice = createSlice({
-  //NAME THAT WILL BE USED IN ACTION.TYPE (AUTOMATICALLY B.T.S)
   name: "text",
-  //INITIAL STATE
   initialState,
-  //REDUCER FUNCTIONS THE ONE USED IN SWITCH CASE
   reducers: {
     setText: (state, action) => {
       state.text = action.payload;
@@ -34,22 +35,24 @@ const textSlice = createSlice({
     },
   },
 });
-//SELECTORS
+
+// Selectors
 export const selectText = (state) => state.text.text;
 export const selectIsProcessing = (state) => state.text.isProcessing;
 export const selectIsDownloading = (state) => state.text.isDownloading;
 export const selectPdfFileName = (state) => state.text.pdfFileName;
-export const selectCount = (state) => state.text.count;
+export const selectCount = (state) => state.text.count; // Ensure this exists
 export const selectError = (state) => state.text.error;
-//ACTIONS
+
+// Actions
 export const {
   setText,
   setIsProcessing,
   setIsDownloading,
   setPdfFileName,
-
   setCount,
   setError,
 } = textSlice.actions;
-//REDUCER
+
+// Reducer
 export default textSlice.reducer;

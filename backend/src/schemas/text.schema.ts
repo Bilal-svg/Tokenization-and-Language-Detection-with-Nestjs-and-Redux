@@ -14,6 +14,12 @@ export class Text extends Document {
 
   @Prop({ required: true, default: '' })
   languages: string;
+
+  @Prop({ required: true, default: '' })
+  role: string;
+
+  @Prop({ required: true, default: '' })
+  sub: string;
 }
 
 export const TextSchema = SchemaFactory.createForClass(Text);

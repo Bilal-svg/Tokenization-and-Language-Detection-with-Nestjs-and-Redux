@@ -1,11 +1,11 @@
 import {
+  Injectable,
   CanActivate,
   ExecutionContext,
-  Injectable,
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { AuthService } from './auth.service.js';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -14,18 +14,27 @@ export class AuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const authHeader = request.headers.authorization;
+    console.log(
+      '🚀 ~ AuthGuard ~ canActivate ~ request.headers:',
+      request.headers,
+    );
+    console.log('🚀 ~ AuthGuard ~ canActivate ~ authHeader:', authHeader);
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException('No token provided');
     }
 
     const token = authHeader.split(' ')[1];
-    const user = this.authService.verifyToken(token);
-    request.user = user; // Attach user to request for downstream use
+    console.log('🚀 ~ AuthGuard ~ canActivate ~ token:', token);
 
-    if (request.route.path.includes('/admin') && user.role !== 'admin') {
-      throw new ForbiddenException('Access denied');
+    try {
+      const user = this.authService.verifyToken(token); // Ensure token verification
+      request.user = user; // Attach the decoded user to the request object
+      context.switchToHttp().getResponse().locals.user = user;
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired token');
     }
+
     return true;
   }
 }

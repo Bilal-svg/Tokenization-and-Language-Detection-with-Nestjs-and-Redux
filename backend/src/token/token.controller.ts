@@ -1,42 +1,43 @@
 import {
-  Query,
   Controller,
   Post,
   Body,
   Res,
-  HttpException,
   HttpStatus,
   Get,
-  Param,
-  Header,
+  Query,
   UseGuards,
+  Header,
+  Param,
 } from '@nestjs/common';
 import { TokenService } from './token.service.js';
+import { AuthGuard } from '../auth/auth.gaurd.js';
 import { Response } from 'express';
-import path from 'path';
 import * as fs from 'fs';
-import { TextValidationGuard } from './gaurds/validation.gaurd.js';
+import path from 'path';
 
 @Controller('token')
 export class TokenController {
   constructor(private readonly tokenService: TokenService) {}
 
   @Post('process')
-  @UseGuards(TextValidationGuard)
+  @UseGuards(AuthGuard)
   async processText(@Body() body: { text: string }, @Res() res: Response) {
     try {
+      const { role, sub } = res.locals.user;
       const { text } = body;
       const { filePath, count, tokens, languages, savedText } =
-        await this.tokenService.processText(text);
+        await this.tokenService.processText(text, role, sub);
       return res
         .status(HttpStatus.OK)
         .json({ filePath, count, tokens, languages, savedText });
     } catch (error) {
-      throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      return res
+        .status(HttpStatus.BAD_REQUEST)
+        .json({ message: error.message });
     }
   }
 
-  // Endpoint to serve the PDF file for download
   @Get('download/:fileName')
   @Header('Content-Type', 'application/pdf')
   @Header('Cache-Control', 'no-cache, no-store, must-revalidate')
@@ -70,27 +71,42 @@ export class TokenController {
   }
 
   @Get('saved-texts')
+  @UseGuards(AuthGuard)
   async getSavedTexts(
     @Query('page') page: string,
     @Query('limit') limit: string,
     @Query('search') search: string,
     @Query('sortOrder') sortOrder: string,
-    @Query('filePath') filePath: string,
     @Res() res: Response,
   ) {
     try {
+      const { role, sub } = res.locals.user;
+
+      let userId = null;
+
+      if (role === 'admin') {
+        userId = null;
+      } else if (role === 'user') {
+        userId = sub;
+      } else if (role === 'guest') {
+        userId = null;
+      }
+
       const { texts, totalCount } =
         await this.tokenService.getPaginatedSavedTexts(
           parseInt(page) || 1,
           parseInt(limit) || 10,
           search || '',
           sortOrder || 'newest',
+          userId,
+          role,
         );
 
       return res.status(HttpStatus.OK).json({ texts, totalCount });
     } catch (error) {
-      console.error(error);
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(error.message);
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: error.message });
     }
   }
 }

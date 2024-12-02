@@ -27,6 +27,7 @@ const formatDate = (isoDate) => {
 };
 
 const DrawerList = ({
+  onTextSelect,
   texts,
   open,
   handleDrawerToggle,
@@ -34,17 +35,16 @@ const DrawerList = ({
   setSearchQuery,
   sortOrder,
   setSortOrder,
-  handleTextSelection,
   currentPage,
   totalPages,
-  handlePageChange,
+  onPageChange,
 }) => {
-  const handleSearchChange = (event) => {
-    setSearchQuery(event.target.value);
+  const handleSearchChange = (value) => {
+    setSearchQuery(value);
   };
 
-  const handleSortChange = (event) => {
-    setSortOrder(event.target.value);
+  const handleSortChange = (value) => {
+    setSortOrder(value); // update the sort order
   };
 
   return (
@@ -57,22 +57,23 @@ const DrawerList = ({
         overflowX: "hidden", // Prevent horizontal scrolling
       }}
     >
-      <Box sx={{ padding: 2 }}>
-        <IconButton onClick={handleDrawerToggle}>
-          <ChevronLeftIcon />
-        </IconButton>
+      <Box sx={{ padding: 1 }}>
         <TextField
           variant="outlined"
           size="small"
           fullWidth
           placeholder="Search..."
           value={searchQuery}
-          onChange={handleSearchChange}
+          onChange={(event) => handleSearchChange(event.target.value)}
           sx={{ marginBottom: 2 }}
         />
         <FormControl fullWidth size="small">
           <InputLabel>Sort By</InputLabel>
-          <Select value={sortOrder} onChange={handleSortChange} label="Sort By">
+          <Select
+            value={sortOrder}
+            onChange={(event) => handleSortChange(event.target.value)} // Corrected here
+            label="Sort By"
+          >
             <MenuItem value="newest">Newest</MenuItem>
             <MenuItem value="oldest">Oldest</MenuItem>
           </Select>
@@ -99,7 +100,7 @@ const DrawerList = ({
         {texts.map((textObject) => (
           <ListItemButton
             key={textObject._id}
-            onClick={() => handleTextSelection(textObject)}
+            onClick={() => onTextSelect(textObject)}
             sx={{
               paddingX: 2,
               flexDirection: "column",
@@ -170,7 +171,7 @@ const DrawerList = ({
         <Pagination
           count={totalPages}
           page={currentPage}
-          onChange={handlePageChange}
+          onChange={onPageChange}
           siblingCount={1} // Show 1 sibling on each side
           boundaryCount={1} // Show 1 boundary page at each end
           shape="rounded" // Rounded pagination

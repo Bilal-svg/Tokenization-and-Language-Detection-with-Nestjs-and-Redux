@@ -5,9 +5,11 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  Grid,
+  Stack,
 } from "@mui/material";
 import axios from "axios";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   selectCount,
@@ -28,11 +30,14 @@ import {
   getSelectedText,
   triggerRefresh,
 } from "../../redux/slice/drawerSlice";
+import { useNavigate } from "react-router-dom";
 
 const TextProcessor = ({ isDrawerOpen, drawerWidth }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const [guestName, setGuestName] = useState("");
 
   const text = useSelector(selectText);
   const isProcessing = useSelector(selectIsProcessing);
@@ -51,12 +56,35 @@ const TextProcessor = ({ isDrawerOpen, drawerWidth }) => {
   }, [selectedText, selectedCount]);
 
   const handleProcessText = async () => {
+    // Check if token or guest exists
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/auth/signup"); // Redirect to signup if not logged in
+      return;
+    }
+
     dispatch(setIsProcessing(true));
     dispatch(setError(null));
+
+    // Prepare headers
+    const headers = {};
+
+    console.log("🚀 ~ handleProcessText ~ token:", token);
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`; // Add the token to the Authorization header
+    } else if (guest) {
+      // If it's a guest login, use the guest token or some other identifier for guest
+      headers["Authorization"] = `Bearer ${guest}`;
+    }
+
     try {
-      const response = await axios.post("http://localhost:3000/token/process", {
-        text,
-      });
+      const response = await axios.post(
+        "http://localhost:3000/token/process",
+        { text },
+        { headers } // Pass the headers with the token
+      );
+
       const { filePath, count } = response.data;
       dispatch(setPdfFileName(filePath.split("\\").pop()));
       dispatch(setCount(count));
@@ -104,23 +132,37 @@ const TextProcessor = ({ isDrawerOpen, drawerWidth }) => {
     }
   };
 
+  const handleGuestAuthentication = async () => {
+    const name = guestName;
+    const response = await axios.post("http://localhost:3000/auth/guest", {
+      name,
+    });
+    const token = response.data.token;
+    if (guestName.trim()) {
+      localStorage.setItem("token", token);
+      navigate("/app");
+    } else {
+      alert("Please enter your name to continue as a guest.");
+    }
+  };
+
   return (
     <Box
       sx={{
-        width: isMobile ? "90%" : "50%", // Smaller width on mobile
-        maxWidth: "600px", // Limit the maximum size
+        width: isMobile ? "90%" : "50%",
+        maxWidth: "600px",
         textAlign: "center",
         padding: 3,
         borderRadius: 2,
         boxShadow: 3,
         backgroundColor: "#fff",
-        position: "absolute", // Absolute positioning to center the box
-        top: "50%", // Center vertically
-        left: isDrawerOpen && isMobile ? `${drawerWidth}px` : "50%", // Adjust position if drawer is open
+        position: "absolute",
+        top: "50%",
+        left: isDrawerOpen && isMobile ? `${drawerWidth}px` : "50%",
         transform:
           isDrawerOpen && isMobile
             ? "translate(0, -50%)"
-            : "translate(-50%, -50%)", // Translate accordingly
+            : "translate(-50%, -50%)",
       }}
     >
       <Typography variant={isMobile ? "h6" : "h5"} gutterBottom>
@@ -129,7 +171,7 @@ const TextProcessor = ({ isDrawerOpen, drawerWidth }) => {
 
       <TextField
         multiline
-        rows={isMobile ? 4 : 6} // Fewer rows on mobile
+        rows={isMobile ? 4 : 6}
         fullWidth
         variant="outlined"
         placeholder="Enter text to process..."
@@ -151,33 +193,74 @@ const TextProcessor = ({ isDrawerOpen, drawerWidth }) => {
         </Typography>
       )}
 
-      <Box
-        sx={{
-          marginBottom: 2,
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row", // Stack buttons on mobile
-          gap: 2,
-        }}
-      >
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleProcessText}
-          disabled={isProcessing}
-          fullWidth={isMobile}
-        >
-          {isProcessing ? "Processing..." : "Process Text"}
-        </Button>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={handleDownloadPDF}
-          disabled={!pdfFileName || isDownloading}
-          fullWidth={isMobile}
-        >
-          {isDownloading ? "Downloading..." : "Download PDF"}
-        </Button>
+      <Box sx={{ marginBottom: 3 }}>
+        <Stack spacing={2}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleProcessText}
+            disabled={isProcessing || !text || !localStorage.getItem("token")}
+            fullWidth
+          >
+            {isProcessing ? "Processing..." : "Process Text"}
+          </Button>
+
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleDownloadPDF}
+            disabled={!pdfFileName || isDownloading}
+            fullWidth
+          >
+            {isDownloading ? "Downloading..." : "Download PDF"}
+          </Button>
+        </Stack>
       </Box>
+
+      {/* Show these buttons if the user is not logged in or a guest */}
+      {!localStorage.getItem("token") && (
+        <Box>
+          <Stack spacing={2}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => navigate("/auth/signup")}
+              fullWidth
+            >
+              Create Account
+            </Button>
+
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => navigate("/auth/login")}
+              fullWidth
+            >
+              Login
+            </Button>
+
+            <TextField
+              fullWidth
+              label="Enter Name (Guest)"
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              sx={{
+                backgroundColor: "#f9f9f9",
+                borderRadius: 1,
+              }}
+            />
+
+            <Button
+              variant="contained"
+              color="default"
+              onClick={handleGuestAuthentication}
+              fullWidth
+            >
+              Continue as Guest
+            </Button>
+          </Stack>
+        </Box>
+      )}
 
       {count !== null && (
         <Typography

@@ -25,6 +25,7 @@ export class AuthController {
   @Post('guest')
   async guest(@Body() { name }: { name: string }, @Res() res: Response) {
     const result = await this.authService.guestLogin(name);
+    console.log('🚀 ~ AuthController ~ guest ~ result:', result);
     return res.status(HttpStatus.CREATED).json(result);
   }
 }

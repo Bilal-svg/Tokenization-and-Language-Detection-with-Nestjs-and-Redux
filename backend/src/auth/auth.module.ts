@@ -10,11 +10,12 @@ import { UsersService } from '../users/users.service.js';
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     JwtModule.register({
-      secret: 'asdf', // Replace with your secret
-      signOptions: { expiresIn: '1h' },
+      secret: process.env.JWT_SECRET_KEY, // Replace with your secret
+      signOptions: { expiresIn: '5m' },
     }),
   ],
   controllers: [AuthController],
   providers: [AuthService, UsersService],
+  exports: [AuthService],
 })
 export class AuthModule {}

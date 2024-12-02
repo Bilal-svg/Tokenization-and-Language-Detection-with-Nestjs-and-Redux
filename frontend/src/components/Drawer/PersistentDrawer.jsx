@@ -1,5 +1,6 @@
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import MenuIcon from "@mui/icons-material/Menu";
+import LogoutIcon from "@mui/icons-material/Logout";
 import {
   AppBar,
   Box,
@@ -16,6 +17,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { onSelect, getRefreshState } from "../../redux/slice/drawerSlice";
 import { setPdfFileName } from "../../redux/slice/textSlice";
+import { logout } from "../../redux/slice/authSlice";
 import DrawerList from "./DrawerList";
 
 const drawerWidth = 240;
@@ -39,6 +41,22 @@ const PersistentDrawer = ({ children }) => {
     setOpen(!open);
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    // Clear localStorage to reset the state
+    localStorage.removeItem("token");
+    localStorage.removeItem("guest");
+    dispatch(logout()); // Dispatch logout to clear state in Redux
+
+    // Reset the drawer state (optional but good for consistent app behavior)
+    setTexts([]);
+    setSearchQuery("");
+    setSortOrder("newest");
+    setCurrentPage(1);
+    setTotalPages(1);
+    setOpen(false); // Close the drawer on logout
+  };
+
   const handleTextSelection = (textObject) => {
     dispatch(
       onSelect({
@@ -56,6 +74,14 @@ const PersistentDrawer = ({ children }) => {
   useEffect(() => {
     const fetchTexts = async () => {
       try {
+        const token = localStorage.getItem("token"); // Retrieve the token
+        console.log("Token from localStorage:", token);
+
+        if (!token) {
+          console.error("No token found, user might be logged out");
+          return;
+        }
+
         const response = await axios.get(
           "http://localhost:3000/token/saved-texts",
           {
@@ -65,10 +91,16 @@ const PersistentDrawer = ({ children }) => {
               search: searchQuery,
               sortOrder,
             },
+            headers: {
+              Authorization: `Bearer ${token}`, // Send the token in the Authorization header
+            },
           }
         );
         setTexts(response.data.texts);
         setTotalPages(Math.ceil(response.data.totalCount / itemsPerPage));
+        if (totalPages < currentPage) {
+          setCurrentPage(1);
+        }
       } catch (error) {
         console.error("Error fetching texts:", error);
       }
@@ -76,9 +108,9 @@ const PersistentDrawer = ({ children }) => {
     fetchTexts();
   }, [currentPage, searchQuery, sortOrder, refresh]);
 
-  if (totalPages < currentPage) {
-    setCurrentPage(1);
-  }
+  // Check if user is authenticated
+  const isAuthenticated =
+    !!localStorage.getItem("token") || !!localStorage.getItem("guest");
 
   return (
     <Box sx={{ display: "flex", height: "100vh" }}>
@@ -108,14 +140,21 @@ const PersistentDrawer = ({ children }) => {
             <MenuIcon />
           </IconButton>
           <Typography variant={isMobile ? "h6" : "h5"}>Text Manager</Typography>
+          {/* Always visible Logout button */}
+          {isAuthenticated && (
+            <IconButton
+              color="inherit"
+              aria-label="logout"
+              onClick={handleLogout}
+              sx={{ marginLeft: "auto" }}
+            >
+              <LogoutIcon />
+            </IconButton>
+          )}
         </Toolbar>
       </AppBar>
 
       <Drawer
-        variant={isMobile ? "temporary" : "persistent"}
-        anchor="left"
-        open={open}
-        onClose={handleDrawerToggle}
         sx={{
           width: drawerWidth,
           flexShrink: 0,
@@ -124,20 +163,33 @@ const PersistentDrawer = ({ children }) => {
             boxSizing: "border-box",
           },
         }}
+        variant="persistent"
+        anchor="left"
+        open={open}
       >
-        <DrawerList
-          texts={texts}
-          open={open}
-          handleDrawerToggle={handleDrawerToggle}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          handleTextSelection={handleTextSelection}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          handlePageChange={handlePageChange}
-        />
+        <Box sx={{ display: "flex", alignItems: "center", padding: 2 }}>
+          <IconButton onClick={handleDrawerToggle}>
+            <ChevronLeftIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            Menu
+          </Typography>
+        </Box>
+
+        {/* Render DrawerList only if user is authenticated */}
+        {isAuthenticated && (
+          <DrawerList
+            texts={texts}
+            onTextSelect={handleTextSelection}
+            onPageChange={handlePageChange}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            totalPages={totalPages}
+            currentPage={currentPage}
+            sortOrder={sortOrder}
+            setSortOrder={setSortOrder}
+          />
+        )}
       </Drawer>
 
       <Box
@@ -145,10 +197,9 @@ const PersistentDrawer = ({ children }) => {
         sx={{
           flexGrow: 1,
           padding: 3,
-          ...(open && !isMobile && { marginLeft: `${drawerWidth}px` }),
+          marginLeft: open && !isMobile ? `${drawerWidth}px` : 0,
         }}
       >
-        <Toolbar />
         {children}
       </Box>
     </Box>
