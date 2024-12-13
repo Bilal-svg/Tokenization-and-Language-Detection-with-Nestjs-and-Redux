@@ -3,4 +3,4 @@ A Fullstack application to tokenize and count words in any given text in any lan
 Admin can see all posts.
 Each user can see his own post hisory and posts made by guest.
 Guests can only see posts done by guests users.
-Real time history update.
+Update History in real time
