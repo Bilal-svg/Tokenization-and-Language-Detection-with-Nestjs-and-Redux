@@ -4,3 +4,6 @@ Admin can see all posts.
 Each user can see his own post hisory and posts made by guest.
 Guests can only see posts done by guests users.
 Update History in real time.
+
+
+npm Pakage "Frank" for tokonization is used.
